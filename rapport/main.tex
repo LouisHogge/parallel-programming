@@ -1,0 +1,89 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage[french]{babel}
+\usepackage{graphicx} 
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{amsmath} 
+\usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{array,booktabs,makecell,multirow}
+\usepackage{siunitx}
+\usepackage[left=2cm, right=2cm, bottom=2cm, top=2cm]{geometry}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+\includegraphics[scale = 0.35]{logo.jpg}\\
+\vspace{1cm}
+\textsc{\huge University of Liège}\\[1.2cm]
+\HRule \\[1cm]
+\textsc{\LARGE Parallel Programming (INFO9012-1) }\\[1cm]
+{\Huge \bfseries A parallel ray tracer}\\[1.4cm] 
+\HRule \\[1cm]
+\end{center}
+
+\begin{minipage}{0.45\linewidth}
+      \begin{flushleft} \large
+        \emph{Authors : } \\
+        Louis \textsc{Hogge}  s192814\\
+        Juliette \textsc{Waltregny}  s194379
+      \end{flushleft}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\linewidth}
+      \begin{flushright} \large
+        \emph{Professor : } P. \textsc{Fontaine}\\
+        \emph{Year : } 2021-2022 
+      \end{flushright}
+\end{minipage}
+
+\end{titlepage}
+
+\newpage
+
+\section{Prior informations}
+
+All experimentations were made on ms8xx machines and these have 4 real cores. One thread was used for displaying images and dealing with user interactions as well as for managing the computation of images. Three threads were used for the proper computation (number of real cores in ms8xx machine minus one). All critical sections (access to or read/write on shared memory) were protected thanks to mutex.
+\\
+\\
+The given sequential version has a score of around 6 fps and the phase 1 version has a score of around 11 fps.
+
+\section{Phase 2}
+{\setlength{\parindent}{0pt}To implement phase 2, the \textit{main} file had to be modified :}
+\newline\indent
+First, two queues were created. A basic one for the angles and a priority one for the images. We simply chose to create a counter that increment each time an image is added to the priority queue and take the counter value as priority.
+\newline\indent
+Then, we created a manager thread. This one updated angles (user request or automatic movement), sent angles to the queue, got images from the priority queue and displayed them. In order to rotate the logo at a frequency of one rotation per minute we used this formula : "$angle\_logo += angle\_logo >= 359.? -359. : 6./fps;$".
+\newline\indent
+After that, we made a thread pool to compute images. It got angles from the queue, computed images thanks to the \textit{render} function and sent images associated with their priorities to the priority queue.
+\newline\indent
+Later, we had to limit the size of the basic queue and priority queue so as not to drown out user requests. If we did not, too many angles and images were put int the queue before those of the user.
+\newline\indent
+Finally, we added two boolean variables, one for the manager thread and one for the thread pool in order to be able to stop their execution loop and properly quit the program.
+\\
+\\
+The phase 2 version has a score of around 17 fps.
+
+
+\section{Phase 3}
+{\setlength{\parindent}{0pt}To implement phase 3, new variables had to be added to the code of the phase 2 :}
+\newline\indent
+First, the variables \textit{centerRedBall} and \textit{radiusMirrorBall}, both of float types, needed to be added to be able to respectively manage the position of the center of the red ball and the size of the radius of the mirror ball. To make the red ball oscillate every 5 seconds, the \textit{centerRedBall} variable was incremented/decremented by $\frac{2}{5}$ and divided by the number of frames per second. The \textit{radiusMirrorBall} was incremented/decremented by $\frac{2}{3}$, and also divided by the number of fps, in order to make the mirror ball oscillate every 3 seconds. All these manipulations were made in the \textit{animate} section, in the same mutex as the one locking the computation of the rotation of the Uliège logo.
+\newline\indent
+Then, To know if the variables needed to be incremented or decremented, two boolean values, \textit{isGoingUp} and \textit{isIncreasing} were introduced. \textit{isGoingUp} informed if the red ball was going up. If it was the case, then \textit{centerRedBall} was incremented, otherwise it was decremented. The same reasoning was applied to the mirror sphere, with \textit{isIncreasing} checking if the sphere was growing and incrementing it.
+\newline\indent
+Finally, we needed to add the two variables in the \textit{render} function and assign the values of the center/radius to them. 
+\\
+\\
+The phase 3 version has a score of around 16 fps.
+
+\end{document}
